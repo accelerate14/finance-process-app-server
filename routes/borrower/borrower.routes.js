@@ -12,7 +12,7 @@ const {
 const {
   submitBorrowerProfile,
   getBorrowerProfile,
-} = require("../../controller/borrower/profile/borrowerCrud.controller");
+} = require("../../controller/borrower/Profile/borrowerCrud.controller");
 
 /* ================= EMPLOYMENT ================= */
 const {
