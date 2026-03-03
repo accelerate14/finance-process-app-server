@@ -8,7 +8,7 @@ const DOCUMENT_ENTITY = process.env.UIPATH_BDOCUMENT_ENTITY_NAME;
 
 module.exports.uploadBorrowerDocuments = async (req, res) => {
     try {
-        const { borrowerId } = req.body;
+        const { UserId } = req.body;
 
         if (!req.files || Object.keys(req.files).length === 0) {
             return res.status(400).json({ success: false, message: "No files uploaded" });
@@ -21,7 +21,7 @@ module.exports.uploadBorrowerDocuments = async (req, res) => {
 
         const createResponse = await axios.post(
             insertUrl,
-            { UserId: borrowerId },
+            { UserId: UserId },
             {
                 headers: {
                     Authorization: `Bearer ${DATA_FABRIC_TOKEN}`,
@@ -30,27 +30,29 @@ module.exports.uploadBorrowerDocuments = async (req, res) => {
             }
         );
 
+        console.log("Create Response Data:", createResponse.data);
+
         const recordId = createResponse.data.Id;
         const files = req.files;
 
         // STEP 2: Upload Files
         const uploadPromises = [];
 
-        if (files?.driverLicense?.[0]) {
+        if (files?.DriversLicense?.[0]) {
             uploadPromises.push(
-                uploadFileToUiPath(recordId, "DriversLicense", files.driverLicense[0])
+                uploadFileToUiPath(recordId, "DriversLicense", files.DriversLicense[0])
             );
         }
 
-        if (files?.payStub?.[0]) {
+        if (files?.PayStub?.[0]) {
             uploadPromises.push(
-                uploadFileToUiPath(recordId, "PayStub", files.payStub[0])
+                uploadFileToUiPath(recordId, "PayStub", files.PayStub[0])
             );
         }
 
-        if (files?.profilePic?.[0]) {
+        if (files?.ProfilePicture?.[0]) {
             uploadPromises.push(
-                uploadFileToUiPath(recordId, "ProfilePicture", files.profilePic[0])
+                uploadFileToUiPath(recordId, "ProfilePicture", files.ProfilePicture[0])
             );
         }
 
@@ -135,9 +137,9 @@ module.exports.getBorrowerDocuments = async (req, res) => {
         return res.status(200).json({
             success: true,
             data: {
-                driverLicense: record.DriversLicense ? `/api/borrower/documents/file/${recordId}/DriversLicense` : null,
-                payStub: record.PayStub ? `/api/borrower/documents/file/${recordId}/PayStub` : null,
-                profilePic: record.ProfilePicture ? `/api/borrower/documents/file/${recordId}/ProfilePicture` : null,
+                DriversLicense: record.DriversLicense ? `/api/borrower/documents/file/${recordId}/DriversLicense` : null,
+                PayStub: record.PayStub ? `/api/borrower/documents/file/${recordId}/PayStub` : null,
+                ProfilePicture: record.ProfilePicture ? `/api/borrower/documents/file/${recordId}/ProfilePicture` : null,
             }
         });
 

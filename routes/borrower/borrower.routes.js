@@ -70,9 +70,9 @@ router.get("/progress/:borrowerId", getBorrowerProgress);
 router.post(
   "/documents/upload",
   upload.fields([
-    { name: "driverLicense", maxCount: 1 },
-    { name: "payStub", maxCount: 1 },
-    { name: "profilePic", maxCount: 1 }
+    { name: "DriversLicense", maxCount: 1 },
+    { name: "PayStub", maxCount: 1 },
+    { name: "ProfilePicture", maxCount: 1 }
   ]),
   uploadBorrowerDocuments
 );
