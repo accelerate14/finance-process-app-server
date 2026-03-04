@@ -1,33 +1,61 @@
 require('dotenv').config();
 const axios = require('axios');
-const { getEntityInstance } = require('../../../utils/uipath');
+const { getEntityInstance, entitiesService } = require('../../../utils/uipath');
 
 const profileEntityName = process.env.UIPATH_BPROFILE_ENTITY_NAME;
 
 const submitBorrowerProfile = async (req, res) => {
     try {
         const profileData = req.body;
+        // Assuming your frontend sends borrowerId inside profileData
+        const UserId = profileData.UserId;
         console.log("Received profile data:", profileData);
 
-        if (!profileData || Object.keys(profileData).length === 0) {
-            return res.status(400).json({ message: 'Profile data is required' });
+        if (!UserId) {
+            return res.status(400).json({ message: 'UserId is required to identify the profile' });
         }
 
-        // 1. Get the operational entity instance from utils
-        const profileEntity = await getEntityInstance(profileEntityName);
+        // 1. Get the operational entity instance
+        const profileEntityMetadata = await getEntityInstance(profileEntityName);
+        console.log("Profile entity metadata:", profileEntityMetadata);
+        const entityUuid = profileEntityMetadata.id;
+        // 2. Fetch all records to find if this borrower already exists
+        const response = await entitiesService.getAllRecords(entityUuid);
+        console.log(`All profiles retrieved:`, response);
+        const existingRecord = response.items.find(p => p.UserId === UserId);
+        let result;
 
-        // 2. Use SDK insert method
-        const result = await profileEntity.insertRecord(profileData);
+        if (existingRecord) {
+            console.log("Record found. Performing Update for ID:", existingRecord.Id);
 
-        console.log("SDK response:", result);
-        return res.status(201).json({ 
-            message: 'Profile submitted successfully', 
-            data: result 
-        });
+            // 3. UPDATE: Must use updateRecordsById with an ARRAY
+            // Each object in the array MUST contain the 'Id'
+            const updatePayload = [{
+                ...profileData,
+                Id: existingRecord.Id // Ensure the system GUID is included
+            }];
+
+            result = await entitiesService.updateRecordsById(entityUuid, updatePayload);
+
+            return res.status(200).json({
+                message: 'Profile updated successfully',
+                data: result
+            });
+        } else {
+            console.log("No record found. Performing Insert.");
+
+            // 4. INSERT: Use insertRecordById for a single record
+            result = await entitiesService.insertRecordById(entityUuid, profileData);
+
+            return res.status(201).json({
+                message: 'Profile created successfully',
+                data: result
+            });
+        }
     } catch (error) {
         console.error('Submit profile error:', error);
         return res.status(500).json({ message: error.message || 'Internal Server error' });
-    }   
+    }
 }
 
 const getBorrowerProfile = async (req, res) => {

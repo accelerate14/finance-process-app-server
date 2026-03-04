@@ -1,27 +1,55 @@
 const axios = require("axios");
 require("dotenv").config();
-const { getEntityInstance } = require('../../../utils/uipath');
+const { getEntityInstance, entitiesService } = require('../../../utils/uipath');
 
 const employmentEntityName = process.env.UIPATH_BEMPLOYMENT_ENTITY_NAME;
 
 const submitEmploymentInfo = async (req, res) => {
   try {
     const employmentData = req.body;
+    const userId = employmentData.UserId;
 
-    if (!employmentData.UserId) {
-      return res.status(400).json({ message: "Borrower ID is required" });
+    if (!userId) {
+      return res.status(400).json({ message: "Borrower ID (UserId) is required" });
     }
 
-    // 1. Get the operational entity instance from utils
-    const employmentEntity = await getEntityInstance(employmentEntityName);
+    // 1. Get the Entity Metadata to retrieve the Entity UUID
+    const employmentEntityMetadata = await getEntityInstance(employmentEntityName);
+    const entityUuid = employmentEntityMetadata.id;
 
-    // 2. Use the SDK's insertRecord method
-    const result = await employmentEntity.insertRecord(employmentData);
+    // 2. Fetch all records to see if this user already has employment info
+    // Note: entitiesService is your imported @uipath/uipath-typescript/entities instance
+    const response = await entitiesService.getAllRecords(entityUuid);
+    const existingRecord = response.items.find(rec => rec.UserId === userId);
 
-    return res.status(201).json({
-      message: "Employment info saved",
-      data: result,
-    });
+    let result;
+
+    if (existingRecord) {
+      console.log(`Updating employment record for UserId: ${userId}`);
+
+      // 3. UPDATE: Must be an array, and MUST include the system 'Id'
+      const updatePayload = [{
+        ...employmentData,
+        Id: existingRecord.Id 
+      }];
+
+      result = await entitiesService.updateRecordsById(entityUuid, updatePayload);
+
+      return res.status(200).json({
+        message: "Employment info updated successfully",
+        data: result,
+      });
+    } else {
+      console.log(`Creating new employment record for UserId: ${userId}`);
+
+      // 4. INSERT: Single record insertion
+      result = await entitiesService.insertRecordById(entityUuid, employmentData);
+
+      return res.status(201).json({
+        message: "Employment info saved successfully",
+        data: result,
+      });
+    }
   } catch (error) {
     console.error("Employment submit error:", error);
     return res.status(500).json({ message: error.message || "Internal Server Error" });

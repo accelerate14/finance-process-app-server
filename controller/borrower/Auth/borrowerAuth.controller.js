@@ -35,7 +35,7 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        const payload = { guid: user.Id, borrowerId: user.userId, email: user.emailAddress };
+        const payload = { guid: user.Id, email: user.emailAddress };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '6h' });
         console.log('Login successful for user:', payload);
         return res.status(200).json({ message: 'User logged in successfully', token: token });

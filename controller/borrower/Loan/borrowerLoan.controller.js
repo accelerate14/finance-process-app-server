@@ -16,6 +16,7 @@ const submitLoanApplication = async (req, res) => {
     // Add metadata/status as you were doing before
     const payload = {
       ...loanData,
+      CaseId: `Case-${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
 
