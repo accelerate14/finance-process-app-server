@@ -68,7 +68,7 @@ const register = async (req, res) => {
             return res.status(500).json({ message: 'Failed to register user' });
         }
 
-        const payload = { borrowerId: insertedRecord.id, email: insertedRecord.emailAddress };
+        const payload = { guid: insertedRecord.id, email: insertedRecord.emailAddress };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '6h' });
         
         return res.status(201).json({ message: 'User registered successfully', token: token });
