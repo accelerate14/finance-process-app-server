@@ -72,7 +72,7 @@ const getBorrowerProfile = async (req, res) => {
         const response = await profileEntity.getAllRecords();
         console.log(`All profiles retrieved:`, response);
         // 3. Find specific profile by borrowerId field
-        const profile = response.items.find(p => p.Id === borrowerId);
+        const profile = response.items.find(p => p.UserId === borrowerId);
         console.log(`Profile for borrowerId ${borrowerId}:`, profile);
 
         if (profile) {  
