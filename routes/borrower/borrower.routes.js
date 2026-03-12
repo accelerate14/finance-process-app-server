@@ -2,6 +2,16 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../../middleware/multer.middlerware");
 
+// Import Schemas
+const { loginSchema, registerSchema } = require("../../validations/auth.validation");
+const { borrowerProfileSchema, getProfileSchema } = require("../../validations/borrower.validation");
+const { employmentInfoSchema, getEmploymentParamsSchema } = require("../../validations/employment.validation");
+const { 
+  loanSubmissionSchema, 
+  getLoanParamsSchema, 
+  getLoanByIdSchema 
+} = require("../../validations/loan.validation");
+
 /* ================= AUTH ================= */
 const {
   login,
@@ -33,31 +43,33 @@ const {
 } = require("../../controller/borrower/Progress/borrowerProgress.controller");
 const { uploadBorrowerDocuments, getBorrowerDocuments, streamDocumentFile } = require("../../controller/borrower/Document/borrowerDocuments.controller");
 const { createBorrowerStages, getBorrowerStages, updateBorrowerStages } = require("../../controller/borrower/Progress/borrowerStages.controller");
+const validate = require("../../middleware/validate.middleware");
 
 /* =================================================
    AUTH ROUTES
 ================================================= */
-router.post("/login", login);
-router.post("/register", register);
+router.post("/login", validate(loginSchema), login);
+router.post("/register", validate(registerSchema), register);
 
 /* =================================================
    PROFILE (STEP 1)
 ================================================= */
-router.post("/profile/submit", submitBorrowerProfile);
-router.get("/profile/:borrowerId", getBorrowerProfile);
+router.post("/profile/submit", validate(borrowerProfileSchema), submitBorrowerProfile);
+router.get("/profile/:borrowerId", validate(getProfileSchema, "params"), getBorrowerProfile);
 
 /* =================================================
    EMPLOYMENT (STEP 2)
 ================================================= */
-router.post("/employment/submit", submitEmploymentInfo);
-router.get("/employment/:borrowerId", getEmploymentInfo);
+router.post("/employment/submit", validate(employmentInfoSchema), submitEmploymentInfo);
+router.get("/employment/:borrowerId", validate(getEmploymentParamsSchema, "params"), getEmploymentInfo);
 
 /* =================================================
    LOAN APPLICATION (STEP 3)
 ================================================= */
-router.post("/loan/submit", submitLoanApplication);
-router.get("/loans/:borrowerId", getLoanApplication);
-router.get("/loan/:loanId", getLoanApplicationById);
+router.post("/loan/submit", validate(loanSubmissionSchema), submitLoanApplication);
+router.get("/loans/:borrowerId", validate(getLoanParamsSchema, "params"), getLoanApplication);
+// Note: using getLoanByIdSchema here to ensure loanId is a valid GUID
+router.get("/loan/:loanId", validate(getLoanByIdSchema, "params"), getLoanApplicationById);
 
 /* =================================================
    WIZARD PROGRESS (RESUME FLOW)
@@ -72,7 +84,6 @@ router.post(
   upload.fields([
     { name: "DriversLicense", maxCount: 1 },
     { name: "PayStub", maxCount: 1 },
-    { name: "ProfilePicture", maxCount: 1 }
   ]),
   uploadBorrowerDocuments
 );

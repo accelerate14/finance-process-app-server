@@ -15,9 +15,7 @@ module.exports.uploadBorrowerDocuments = async (req, res) => {
         }
 
         // STEP 1: Insert record
-        // Correct path: .../api/EntityService/{EntityName}
         const insertUrl = `${BASE_API_URL}/${DOCUMENT_ENTITY}/insert`;
-        // console.log("Hitting Insert URL:", insertUrl);
 
         const createResponse = await axios.post(
             insertUrl,
@@ -30,31 +28,27 @@ module.exports.uploadBorrowerDocuments = async (req, res) => {
             }
         );
 
-        console.log("Create Response Data:", createResponse.data);
-
         const recordId = createResponse.data.Id;
         const files = req.files;
 
         // STEP 2: Upload Files
         const uploadPromises = [];
 
+        // Upload Driver's License if exists
         if (files?.DriversLicense?.[0]) {
             uploadPromises.push(
                 uploadFileToUiPath(recordId, "DriversLicense", files.DriversLicense[0])
             );
         }
 
+        // Upload Pay Stub if exists
         if (files?.PayStub?.[0]) {
             uploadPromises.push(
                 uploadFileToUiPath(recordId, "PayStub", files.PayStub[0])
             );
         }
 
-        if (files?.ProfilePicture?.[0]) {
-            uploadPromises.push(
-                uploadFileToUiPath(recordId, "ProfilePicture", files.ProfilePicture[0])
-            );
-        }
+        // Note: ProfilePicture logic has been removed from here
 
         await Promise.all(uploadPromises);
 
@@ -64,10 +58,8 @@ module.exports.uploadBorrowerDocuments = async (req, res) => {
         });
 
     } catch (err) {
-        // Log the detailed error from Axios if it exists
         if (err.response) {
             console.error("UiPath Error Data:", err.response.data);
-            console.error("UiPath Error Status:", err.response.status);
         }
         console.error("DETAILED ERROR:", err.message);
         return res.status(500).json({ success: false, message: err.message });
@@ -81,16 +73,8 @@ async function uploadFileToUiPath(recordId, fieldName, fileObject) {
         contentType: fileObject.mimetype,
     });
 
-    /**
-     * CLEAN THE URL:
-     * We need to ensure "EntityService" is NOT in the path for Attachments.
-     * We take your BASE_API_URL and make sure it ends at /api
-     */
     const cleanBaseUrl = process.env.UIPATH_TOKEN_URL.split('/EntityService')[0];
-
     const attachmentUrl = `${cleanBaseUrl}/Attachment/${DOCUMENT_ENTITY}/${recordId}/${fieldName}`;
-
-    // console.log("Hitting Attachment URL:", attachmentUrl);
 
     return axios.post(
         attachmentUrl,
@@ -108,7 +92,6 @@ module.exports.getBorrowerDocuments = async (req, res) => {
     try {
         const { borrowerId } = req.params;
 
-        // STEP 1: Find the document record for this borrower
         const queryUrl = `${BASE_API_URL}/${DOCUMENT_ENTITY}/query`;
         const queryResponse = await axios.post(
             queryUrl,
@@ -121,8 +104,6 @@ module.exports.getBorrowerDocuments = async (req, res) => {
             }
         );
 
-        console.log("Query Response Data:", queryResponse.data);
-
         const record = queryResponse.data.value?.[0];
 
         if (!record) {
@@ -131,15 +112,12 @@ module.exports.getBorrowerDocuments = async (req, res) => {
 
         const recordId = record.Id;
 
-        console.log("Found document record ID:", recordId);
-        // STEP 2: Return the URLs
-        // We point these to a backend route that will stream the file from UiPath
         return res.status(200).json({
             success: true,
             data: {
                 DriversLicense: record.DriversLicense ? `/api/borrower/documents/file/${recordId}/DriversLicense` : null,
                 PayStub: record.PayStub ? `/api/borrower/documents/file/${recordId}/PayStub` : null,
-                ProfilePicture: record.ProfilePicture ? `/api/borrower/documents/file/${recordId}/ProfilePicture` : null,
+                // ProfilePicture removed from the return object
             }
         });
 
@@ -165,7 +143,6 @@ module.exports.streamDocumentFile = async (req, res) => {
             }
         });
 
-        // Pipe the UiPath stream directly to the frontend response
         response.data.pipe(res);
     } catch (err) {
         res.status(500).send("Error streaming file");
