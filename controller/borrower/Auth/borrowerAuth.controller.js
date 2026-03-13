@@ -53,28 +53,51 @@ const register = async (req, res) => {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
+        const borrowerEntity = await getEntityInstance(entityName);
+
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
+
         const newUser = {
             emailAddress: email,
             password: hashedPassword,
-            isActive: true // Ensuring new users are active for login
+            isActive: true
         };
 
-        const borrowerEntity = await getEntityInstance(entityName);
-        // Use insertRecord for single inserts to trigger Data Fabric events
+        // Attempt to insert immediately
         const insertedRecord = await borrowerEntity.insertRecord(newUser);
-
-        if (!insertedRecord) {
-            return res.status(500).json({ message: 'Failed to register user' });
-        }
 
         const payload = { guid: insertedRecord.id, email: insertedRecord.emailAddress };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '6h' });
-        
-        return res.status(201).json({ message: 'User registered successfully', token: token });
+
+        return res.status(201).json({
+            success: true,
+            message: 'User registered successfully',
+            token: token
+        });
+
     } catch (error) {
-        console.error('Registration error:', error);
-        return res.status(500).json({ message: error.message || 'Internal Server error' });
+        // Log the full error to your server console for debugging
+        console.error('Registration error details:', error);
+
+        // Handling the "Value uniqueness violation" error you shared earlier
+        if (
+            error.type === 'ValidationError' ||
+            error.message?.includes('uniquely constrained') ||
+            error.message?.includes('repeated value') ||
+            error.statusCode === 400 // The SDK mapped status code
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'This email is already registered. Please try another email.'
+            });
+        }
+
+        // Generic fallback for other 500 errors
+        return res.status(500).json({
+            success: false,
+            message: 'Registration failed due to a server error.'
+        });
     }
 };
 
