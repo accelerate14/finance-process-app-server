@@ -46,14 +46,22 @@ const borrowerProfileSchema = Joi.object({
         .required()
         .messages({ 'string.pattern.base': 'SSN must be a valid 9-digit number.' }),
 
+    PhoneNumber: Joi.string()
+        .regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/)
+        .required()
+        .messages({
+            'string.pattern.base': 'Please enter a valid 10-digit phone number.',
+            'any.required': 'Phone number is required.'
+        }),
+
     Address: Joi.string()
         .trim()
         .min(5)   // e.g., "1 A St"
-        .max(100)
+        .max(150)
         .required()
         .messages({
             'string.min': 'Address is too short.',
-            'string.max': 'Address is too long (max 100 characters).'
+            'string.max': 'Address is too long (max 150 characters).'
         }),
 
     City: Joi.string()
