@@ -17,24 +17,24 @@ const loanSubmissionSchema = Joi.object({
     LoanAmount: Joi.number()
         .positive()
         .min(1000)
-        .max(1000000)
+        .max(10000)
         .required()
-        .messages({
+        .messages({ 
             'number.min': 'Minimum loan amount is 1,000',
-            'number.max': 'Maximum loan amount is 1,000,000',
+            'number.max': 'Maximum loan amount is 10,000',
             'number.base': 'Loan amount must be a number'
         }),
 
-    TermOfLoan: Joi.number()
-        .integer()
-        .min(3)
-        .max(360)
-        .required()
-        .messages({
-            'number.min': 'Minimum tenure is 3 months',
-            'number.max': 'Maximum tenure is 360 months',
-            'number.base': 'Term must be a number of months'
-        }),
+    // TermOfLoan: Joi.number()
+    //     .integer()
+    //     .min(3)
+    //     .max(360)
+    //     .required()
+    //     .messages({
+    //         'number.min': 'Minimum tenure is 3 months',
+    //         'number.max': 'Maximum tenure is 360 months',
+    //         'number.base': 'Term must be a number of months'
+    //     }),
 
     PurposeOfLoan: Joi.string()
         .valid(
