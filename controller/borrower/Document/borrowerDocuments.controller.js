@@ -8,7 +8,7 @@ const DOCUMENT_ENTITY = process.env.UIPATH_BDOCUMENT_ENTITY_NAME;
 
 module.exports.uploadBorrowerDocuments = async (req, res) => {
     try {
-        const { UserId } = req.body;
+        const { UserId, CaseNumber } = req.body;
 
         if (!req.files || Object.keys(req.files).length === 0) {
             return res.status(400).json({ success: false, message: "No files uploaded" });
@@ -19,7 +19,7 @@ module.exports.uploadBorrowerDocuments = async (req, res) => {
 
         const createResponse = await axios.post(
             insertUrl,
-            { UserId: UserId },
+            { UserId: UserId, CaseNumber: CaseNumber },
             {
                 headers: {
                     Authorization: `Bearer ${DATA_FABRIC_TOKEN}`,
@@ -90,12 +90,19 @@ async function uploadFileToUiPath(recordId, fieldName, fileObject) {
 
 module.exports.getBorrowerDocuments = async (req, res) => {
     try {
-        const { borrowerId } = req.params;
+        const { caseId } = req.params;
 
         const queryUrl = `${BASE_API_URL}/${DOCUMENT_ENTITY}/query`;
+        
         const queryResponse = await axios.post(
             queryUrl,
-            { filter: `UserId eq '${borrowerId}'` },
+            { 
+                // 1. Ensure the filter is robust
+                filter: `CaseNumber eq '${caseId}'`,
+                // 2. Sort by UpdateTime descending to get the newest first
+                orderby: "UpdateTime desc",
+                top: 1 
+            },
             {
                 headers: {
                     Authorization: `Bearer ${DATA_FABRIC_TOKEN}`,
@@ -104,20 +111,23 @@ module.exports.getBorrowerDocuments = async (req, res) => {
             }
         );
 
-        const record = queryResponse.data.value?.[0];
+        // Instead of just taking [0], let's explicitly find the match in the array 
+        // as a backup in case the API filter underperforms
+        const record = queryResponse.data.value.find(r => r.CaseNumber === caseId);
 
         if (!record) {
-            return res.status(404).json({ success: false, message: "No documents found" });
+            console.log(`No record found matching CaseNumber: ${caseId}`);
+            return res.status(404).json({ success: false, message: "No documents found for this case" });
         }
 
-        const recordId = record.Id;
+        console.log("Correct Record Found:", record.Id);
 
         return res.status(200).json({
             success: true,
             data: {
-                DriversLicense: record.DriversLicense ? `/api/borrower/documents/file/${recordId}/DriversLicense` : null,
-                PayStub: record.PayStub ? `/api/borrower/documents/file/${recordId}/PayStub` : null,
-                // ProfilePicture removed from the return object
+                // Using the specific Internal Names confirmed in your logs
+                DriversLicense: record.DriversLicense ? `/api/borrower/documents/file/${record.Id}/DriversLicense` : null,
+                PayStub: record.PayStub ? `/api/borrower/documents/file/${record.Id}/PayStub` : null,
             }
         });
 
@@ -126,6 +136,8 @@ module.exports.getBorrowerDocuments = async (req, res) => {
         return res.status(500).json({ success: false, message: err.message });
     }
 };
+
+
 
 module.exports.streamDocumentFile = async (req, res) => {
     try {

@@ -2,6 +2,8 @@ const Joi = require('joi');
 
 const loanSubmissionSchema = Joi.object({
     UserId: Joi.string().required(),
+    PersonalInfo: Joi.string().required(),
+    EmploymentDetails: Joi.string().required(),
     RequestedOn: Joi.date().iso().required(),
     BorrowerEmail: Joi.string().email().lowercase().required(),
 
@@ -19,7 +21,7 @@ const loanSubmissionSchema = Joi.object({
         .min(1000)
         .max(10000)
         .required()
-        .messages({ 
+        .messages({
             'number.min': 'Minimum loan amount is 1,000',
             'number.max': 'Maximum loan amount is 10,000',
             'number.base': 'Loan amount must be a number'

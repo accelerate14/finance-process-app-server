@@ -16,6 +16,7 @@ const submitLoanApplication = async (req, res) => {
     // Add metadata/status as you were doing before
     const payload = {
       ...loanData,
+      CaseId: `CASE-${Date.now()}`, // Simple unique case ID, replace with your logic if needed
       createdAt: new Date().toISOString(),
     };
 

@@ -87,7 +87,7 @@ router.post(
   ]),
   uploadBorrowerDocuments
 );
-router.get("/documents/:borrowerId", getBorrowerDocuments);
+router.get("/documents/:caseId", getBorrowerDocuments);
 
 /* =================================================
    STAGE MANAGEMENT (STEP 5)
@@ -95,8 +95,6 @@ router.get("/documents/:borrowerId", getBorrowerDocuments);
 router.post("/stages/create-stage", createBorrowerStages);
 router.get("/stages/:borrowerId", getBorrowerStages);
 router.put("/stages/update-stage/:borrowerId", updateBorrowerStages);
-
-router.get("/documents/:borrowerId", getBorrowerDocuments);
 
 // NEW: The actual file stream (The "Bridge" to UiPath)
 router.get("/documents/file/:recordId/:fieldName", streamDocumentFile);
