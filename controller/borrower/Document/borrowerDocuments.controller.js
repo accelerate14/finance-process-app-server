@@ -489,7 +489,7 @@ module.exports.getSignedDocument = async (req, res) => {
 module.exports.createLenderSigningSubmission = async (req, res) => {
     try {
         const { caseId } = req.body;
-        const TRANSACTION_ENTITY = "FLCMAgreementTransactions";
+        const TRANSACTION_ENTITY = process.env.UIPATH_SUBMISSION_ENTITY_NAME;
 
         // 1. Get SubmissionId from Data Fabric
         const queryResponse = await axios.post(
