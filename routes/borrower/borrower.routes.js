@@ -1,15 +1,16 @@
 const express = require("express");
 const router = express.Router();
+const axios = require("axios");
 const upload = require("../../middleware/multer.middlerware");
 
 // Import Schemas
 const { loginSchema, registerSchema } = require("../../validations/auth.validation");
 const { borrowerProfileSchema, getProfileSchema } = require("../../validations/borrower.validation");
 const { employmentInfoSchema, getEmploymentParamsSchema } = require("../../validations/employment.validation");
-const { 
-  loanSubmissionSchema, 
-  getLoanParamsSchema, 
-  getLoanByIdSchema 
+const {
+  loanSubmissionSchema,
+  getLoanParamsSchema,
+  getLoanByIdSchema
 } = require("../../validations/loan.validation");
 
 /* ================= AUTH ================= */
@@ -41,7 +42,7 @@ const {
 const {
   getBorrowerProgress,
 } = require("../../controller/borrower/Progress/borrowerProgress.controller");
-const { uploadBorrowerDocuments, getBorrowerDocuments, streamDocumentFile } = require("../../controller/borrower/Document/borrowerDocuments.controller");
+const { uploadBorrowerDocuments, getBorrowerDocuments, streamDocumentFile, uploadLoanAgreement, getSignedDocument, createSigningSubmission, uploadLenderSignedAgreement, createLenderSigningSubmission } = require("../../controller/borrower/Document/borrowerDocuments.controller");
 const { createBorrowerStages, getBorrowerStages, updateBorrowerStages } = require("../../controller/borrower/Progress/borrowerStages.controller");
 const validate = require("../../middleware/validate.middleware");
 
@@ -89,6 +90,12 @@ router.post(
 );
 router.get("/documents/:caseId", getBorrowerDocuments);
 
+router.post(
+  "/documents/upload-agreement",
+  upload.single("LoanAgreement"), // single file, field name = LoanAgreement
+  uploadLoanAgreement
+);
+
 /* =================================================
    STAGE MANAGEMENT (STEP 5)
 ================================================= */
@@ -98,5 +105,13 @@ router.put("/stages/update-stage/:borrowerId", updateBorrowerStages);
 
 // NEW: The actual file stream (The "Bridge" to UiPath)
 router.get("/documents/file/:recordId/:fieldName", streamDocumentFile);
+
+
+router.post("/documents/create-signing-submission", createSigningSubmission);
+
+router.get("/documents/signed-agreement/:submissionId", getSignedDocument);
+
+router.post("/documents/create-lender-submission", createLenderSigningSubmission);
+router.post("/documents/upload-lender-agreement", uploadLenderSignedAgreement);
 
 module.exports = router;
